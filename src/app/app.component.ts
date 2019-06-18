@@ -8,72 +8,241 @@ import * as d3 from 'd3';
 })
 export class AppComponent {
 
-  margin = { top: 50, right: 50, bottom: 50, left: 50 };
-  width = window.innerWidth - this.margin.left - this.margin.right; // Use the window's width
-  height = window.innerHeight - this.margin.top - this.margin.bottom; // Use the window's height
+  data = this.randomData([], 30);
+  margin = {
+    top: 20,
+    right: 20,
+    bottom: 30,
+    left: 50
+  };
+  width = 800 - this.margin.left - this.margin.right;
+  height = 400 - this.margin.top - this.margin.bottom;
 
-  // The number of datapoints
-  n = 60;
-
-  // 5. X scale will use the index of our data
   xScale = d3.scaleLinear()
-    .domain([0, this.n - 1]) // input
-    .range([0, this.width]); // output
+  .range([0, this.width])
+  .domain(d3.extent(this.data, (d) => {
+    return d.x;
+  })).nice();
 
-  // 6. Y scale will use the randomly generate number
   yScale = d3.scaleLinear()
-    .domain([0, 10]) // input
-    .range([this.height, 0]); // output
+  .range([this.height, 0])
+  .domain(d3.extent(this.data, (d) => {
+    return d.y;
+  })).nice();
 
-  // 7. d3's line generator
-  line = d3.line()
-    .x((d, i) => {
-      return this.xScale(i);
-     }) // set the x values for the line generator
-    .y((d) => {
-       return this.yScale(d.y);
-      }); // set the y values for the line generator
+  xAxis = d3.axisBottom(this.xScale).ticks(12);
+  yAxis = d3.axisLeft(this.yScale).ticks(12 * this.height / this.width);
 
-  // 8. An array of objects of length N. Each object has key -> value pair, the key being 'y' and the value is a random number
-  dataset = d3.range(this.n).map((d) => {
-    return {y: d3.randomUniform(10)() };
+  plotLine = d3.line()
+  .curve(d3.curveMonotoneX)
+  .x((d) => {
+    return this.xScale(d.x);
+  })
+  .y((d) => {
+    return this.yScale(d.y);
   });
 
+  dataNest = d3.nest()
+  .key( (d) => {
+      return d.name;
+  })
+  .entries(this.data);
+
 // 1. Add the SVG to the page and employ #2
- svg = d3.select('body').append('svg')
+svg = d3.select('body').append('svg')
 .attr('width', this.width + this.margin.left + this.margin.right)
-.attr('height', this.height + this.margin.top + this.margin.bottom)
-.append('g')
-.attr('transform', 'translate(' + this.margin.left + ',' + this.margin.top + ')');
+.attr('height', this.height + this.margin.top + this.margin.bottom);
 
-// 3. Call the x axis in a group tag
- l1 = this.svg.append('g')
-    .attr('class', 'x axis')
-    .attr('transform', 'translate(0,' + this.height + ')')
-    .call(d3.axisBottom(this.xScale)); // Create an axis component with d3.axisBottom
+v = this.svg.append('g')
+.attr('class', 'x axis ')
+.attr('id', 'axis--x')
+.attr('transform', 'translate(' + this.margin.left + ',' + (this.height + this.margin.top) + ')')
+.call(this.xAxis);
 
-// 4. Call the y axis in a group tag
-m = this.svg.append('g')
-    .attr('class', 'y axis')
-    .call(d3.axisLeft(this.yScale)); // Create an axis component with d3.axisLeft
+b = this.svg.append('g')
+.attr('class', 'y axis')
+.attr('transform', 'translate(' + this.margin.left + ',' + this.margin.top + ')')
+.attr('id', 'axis--y')
+.call(this.yAxis);
 
-// 9. Append the path, bind the data, and call the line generator
-k = this.svg.append('path')
-    .datum(this.dataset) // 10. Binds data to the line
-    .attr('class', 'line') // Assign a class for styling
-    .attr('d', this.line); // 11. Calls the line generator
+line = this.svg.append('g').attr('transform', 'translate(' + this.margin.left + ',' + this.margin.top + ')');
 
-// 12. Appends a circle for each datapoint
-l = this.svg.selectAll('.dot')
-    .data(this.dataset)
-  .enter().append('circle') // Uses the enter().append() method
-    .attr('class', 'dot') // Assign a class for styling
-    .attr('cx', (d, i) => {
-      return this.xScale(i);
-    })
-    .attr('cy', (d) => {
-       return this.yScale(d.y);
-       })
-    .attr('r', 5);
+dot = this.svg.append('g')
+    .attr('id', 'scatter')
+    .attr('transform', 'translate(' + this.margin.left + ',' + this.margin.top + ')');
+
+
+// n = this.dataNest.forEach( (d, i) => {
+
+//   // Add line plot
+//   this.line.append('g')
+//       .attr('id', 'line-' + i)
+//       .attr('clip-path', 'url(#clip)')
+//         .append('path')
+//         .datum(d.values)
+//         .attr('class', 'pointlines')
+//         .attr('d', this.plotLine)
+//         .style('fill', 'none')
+//         .style('stroke',  '#ffab00');
+//   this.dot.append('g')
+//     .attr('id', 'scatter-' + i)
+//     .attr('clip-path', 'url(#clip)')
+//     .selectAll('.dot')
+//     .data(d.values)
+//       .enter().append('circle')
+//       .attr('class', 'dot')
+//       .attr('r', 5)
+//       .attr('cx', (d) => {
+//         return this.xScale(d.x);
+//       })
+//       .attr('cy', (d) => {
+//         return this.yScale(d.y);
+//       })
+//       .attr('stroke', 'white')
+//       .attr('stroke-width', '2px')
+//       .style('fill',  '#ffab00');
+// }); // End data nest loop
+
+g = 31;
+    randomData(data, samples) {
+      data = [];
+      for (let i = 0; i < samples; i++) {
+        data.push({
+          x: i,
+          y: Math.sin(Math.random()),
+          name: 'group-1'
+        });
+      }
+      data.sort((a, b) => {
+        return a.x - b.x;
+      });
+      return data;
+    }
+
+/****************** Update Below **************************/
+
+
+    update() {
+
+      const newData = this.newRandom([], 15);
+      this.data = this.data.concat(newData);
+    
+      this.data.sort((a, b) => {
+        return a.x - b.x;
+      });
+    
+      // Nest the entries by name
+      this.dataNest = d3.nest()
+      .key( (d) => {
+          return d.name;
+      })
+      .entries(this.data);
+    
+      this.xScale.domain(d3.extent(this.data, (d) => {
+        return d.x;
+      })).nice();
+    
+      this.yScale.domain(d3.extent(this.data, (d) => {
+        return d.y;
+      })).nice();
+    
+      this.yAxis.scale(this.yScale);
+      this.xAxis.scale(this.xScale);
+    
+      this.svg.transition().duration(1000).select('.y.axis').call(this.yAxis);
+      this.svg.transition().duration(1000).select('.x.axis').call(this.xAxis);
+    
+      this.dataNest.forEach( (d, i) => {
+    if ( d3.select('#line-' + i).empty()) {
+            // add new charts
+            // Add line plot
+          this.line.append('g')
+              .attr('id', 'line-' + i)
+              .attr('clip-path', 'url(#clip)')
+                .append('path')
+                .datum(d.values)
+                .attr('class', 'pointlines')
+                .attr('d', this.plotLine)
+                .style('fill', 'none')
+                .style('stroke',  '#ffab00');
+    
+          this.dot.append('g')
+            .attr('id', 'scatter-' + i)
+            .attr('clip-path', 'url(#clip)')
+            .selectAll('.dot')
+            .data(d.values)
+              .enter().append('circle')
+              .attr('class', 'dot')
+              .attr('r', 5)
+              .attr('cx', (d) => {
+                return this.xScale(d.x);
+              })
+              .attr('cy', (d) => {
+                return this.yScale(d.y);
+              })
+              .attr('stroke', 'white')
+              .attr('stroke-width', '2px')
+              .style('fill',  '#ffab00');
+      } else {
+          this.line.select('#line-' + i).select('path').data([d.values])
+            .transition().duration(750)
+            .attr('d', this.plotLine);
+    
+          // Update all circles
+          this.dot.select('#scatter-' + i).selectAll('circle')
+            .data(d.values)
+            .transition()
+            .duration(750)
+            .attr('cx', (d) => {
+              return this.xScale(d.x);
+            })
+            .attr('cy', (d) => {
+              return this.yScale(d.y);
+            })
+            .attr('stroke', 'white')
+            .attr('stroke-width', '2px')
+            .style('fill',  '#ffab00');
+    
+          // Enter new circles
+          this.dot.select('#scatter-' + i).selectAll('circle')
+            .data(d.values)
+            .enter()
+            .append('circle')
+              .attr('cx', (d) => {
+                return this.xScale(d.x);
+              })
+              .attr('cy', (d) => {
+                return this.yScale(d.y);
+              })
+              .attr('r', 5)
+              .attr('stroke', 'white')
+              .attr('stroke-width', '2px')
+              .style('fill',  '#ffab00');
+    
+          // Remove old
+          this.dot.select('#scatter-' + i).selectAll('circle')
+            .data(d.values)
+            .exit()
+            .remove();
+        }
+    });
+    
+    }
+     
+      newRandom(data, samples) {
+        data = [];
+        for (let i = 0; i < samples; i++) {
+          data.push({
+            x: this.g,
+            y: Math.sin(Math.random()),
+            name: 'group-1'
+          });
+          this.g++;
+        }
+        data.sort((a, b) => {
+          return a.x - b.x;
+        });
+        return data;
+      }
 }
 
