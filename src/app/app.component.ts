@@ -8,7 +8,8 @@ import * as d3 from 'd3';
 })
 export class AppComponent {
 
-  data = this.randomData([], 30);
+  g = 0;
+  data = this.newRandom([], 30);
   margin = {
     top: 20,
     right: 20,
@@ -30,8 +31,8 @@ export class AppComponent {
     return d.y;
   })).nice();
 
-  xAxis = d3.axisBottom(this.xScale).ticks(12);
-  yAxis = d3.axisLeft(this.yScale).ticks(12 * this.height / this.width);
+  xAxis = d3.axisBottom(this.xScale); // .ticks(12);
+  yAxis = d3.axisLeft(this.yScale); // .ticks(12 * this.height / this.width);
 
   plotLine = d3.line()
   .curve(d3.curveMonotoneX)
@@ -72,86 +73,69 @@ dot = this.svg.append('g')
     .attr('transform', 'translate(' + this.margin.left + ',' + this.margin.top + ')');
 
 
-// n = this.dataNest.forEach( (d, i) => {
+n = this.dataNest.forEach( (d, i) => {
 
-//   // Add line plot
-//   this.line.append('g')
-//       .attr('id', 'line-' + i)
-//       .attr('clip-path', 'url(#clip)')
-//         .append('path')
-//         .datum(d.values)
-//         .attr('class', 'pointlines')
-//         .attr('d', this.plotLine)
-//         .style('fill', 'none')
-//         .style('stroke',  '#ffab00');
-//   this.dot.append('g')
-//     .attr('id', 'scatter-' + i)
-//     .attr('clip-path', 'url(#clip)')
-//     .selectAll('.dot')
-//     .data(d.values)
-//       .enter().append('circle')
-//       .attr('class', 'dot')
-//       .attr('r', 5)
-//       .attr('cx', (d) => {
-//         return this.xScale(d.x);
-//       })
-//       .attr('cy', (d) => {
-//         return this.yScale(d.y);
-//       })
-//       .attr('stroke', 'white')
-//       .attr('stroke-width', '2px')
-//       .style('fill',  '#ffab00');
-// }); // End data nest loop
+  // Add line plot
+  this.line.append('g')
+      .attr('id', 'line-' + i)
+      .attr('clip-path', 'url(#clip)')
+      .append('path')
+      .datum(d.values)
+      .attr('class', 'pointlines')
+      .attr('d', this.plotLine)
+      .style('fill', 'none')
+      .style('stroke',  '#ffab00');
 
-g = 31;
-    randomData(data, samples) {
-      data = [];
-      for (let i = 0; i < samples; i++) {
-        data.push({
-          x: i,
-          y: Math.sin(Math.random()),
-          name: 'group-1'
-        });
-      }
-      data.sort((a, b) => {
-        return a.x - b.x;
-      });
-      return data;
-    }
+  this.dot.append('g')
+    .attr('id', 'scatter-' + i)
+    .attr('clip-path', 'url(#clip)')
+    .selectAll('.dot')
+    .data(d.values)
+    .enter().append('circle')
+    .attr('class', 'dot')
+    .attr('r', 5)
+    .attr('cx', (d) => {
+      return this.xScale(d.x);
+    })
+    .attr('cy', (d) => {
+      return this.yScale(d.y);
+    })
+    .attr('stroke', 'white')
+    .attr('stroke-width', '2px')
+    .style('fill',  '#ffab00');
+}); // End data nest loop
+
+updateInterval = setInterval(() => {
+        this.update();
+      }, 1000);
 
 /****************** Update Below **************************/
 
 
     update() {
 
-      const newData = this.newRandom([], 15);
-      this.data = this.data.concat(newData);
-    
-      this.data.sort((a, b) => {
-        return a.x - b.x;
-      });
-    
+      this.newRandom(this.data, 1);
       // Nest the entries by name
       this.dataNest = d3.nest()
       .key( (d) => {
           return d.name;
       })
       .entries(this.data);
-    
+
       this.xScale.domain(d3.extent(this.data, (d) => {
         return d.x;
       })).nice();
-    
+
       this.yScale.domain(d3.extent(this.data, (d) => {
         return d.y;
       })).nice();
-    
+
       this.yAxis.scale(this.yScale);
       this.xAxis.scale(this.xScale);
-    
+
       this.svg.transition().duration(1000).select('.y.axis').call(this.yAxis);
       this.svg.transition().duration(1000).select('.x.axis').call(this.xAxis);
-    
+
       this.dataNest.forEach( (d, i) => {
     if ( d3.select('#line-' + i).empty()) {
             // add new charts
@@ -165,7 +149,7 @@ g = 31;
                 .attr('d', this.plotLine)
                 .style('fill', 'none')
                 .style('stroke',  '#ffab00');
-    
+
           this.dot.append('g')
             .attr('id', 'scatter-' + i)
             .attr('clip-path', 'url(#clip)')
@@ -187,7 +171,7 @@ g = 31;
           this.line.select('#line-' + i).select('path').data([d.values])
             .transition().duration(750)
             .attr('d', this.plotLine);
-    
+
           // Update all circles
           this.dot.select('#scatter-' + i).selectAll('circle')
             .data(d.values)
@@ -202,7 +186,6 @@ g = 31;
             .attr('stroke', 'white')
             .attr('stroke-width', '2px')
             .style('fill',  '#ffab00');
-    
           // Enter new circles
           this.dot.select('#scatter-' + i).selectAll('circle')
             .data(d.values)
@@ -218,7 +201,7 @@ g = 31;
               .attr('stroke', 'white')
               .attr('stroke-width', '2px')
               .style('fill',  '#ffab00');
-    
+
           // Remove old
           this.dot.select('#scatter-' + i).selectAll('circle')
             .data(d.values)
@@ -226,11 +209,10 @@ g = 31;
             .remove();
         }
     });
-    
+
     }
-     
+
       newRandom(data, samples) {
-        data = [];
         for (let i = 0; i < samples; i++) {
           data.push({
             x: this.g,
