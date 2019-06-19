@@ -9,7 +9,7 @@ import * as d3 from 'd3';
 export class AppComponent {
 
   g = 0;
-  data = this.newRandom([], 30);
+  data = this.generateRandomNumber([], 30);
   margin = {
     top: 20,
     right: 20,
@@ -31,8 +31,8 @@ export class AppComponent {
     return d.y;
   })).nice();
 
-  xAxis = d3.axisBottom(this.xScale); // .ticks(12);
-  yAxis = d3.axisLeft(this.yScale); // .ticks(12 * this.height / this.width);
+  xAxis = d3.axisBottom(this.xScale);
+  yAxis = d3.axisLeft(this.yScale);
 
   plotLine = d3.line()
   .curve(d3.curveMonotoneX)
@@ -74,35 +74,8 @@ dot = this.svg.append('g')
 
 
 n = this.dataNest.forEach( (d, i) => {
-
   // Add line plot
-  this.line.append('g')
-      .attr('id', 'line-' + i)
-      .attr('clip-path', 'url(#clip)')
-      .append('path')
-      .datum(d.values)
-      .attr('class', 'pointlines')
-      .attr('d', this.plotLine)
-      .style('fill', 'none')
-      .style('stroke',  '#ffab00');
-
-  this.dot.append('g')
-    .attr('id', 'scatter-' + i)
-    .attr('clip-path', 'url(#clip)')
-    .selectAll('.dot')
-    .data(d.values)
-    .enter().append('circle')
-    .attr('class', 'dot')
-    .attr('r', 5)
-    .attr('cx', (d) => {
-      return this.xScale(d.x);
-    })
-    .attr('cy', (d) => {
-      return this.yScale(d.y);
-    })
-    .attr('stroke', 'white')
-    .attr('stroke-width', '2px')
-    .style('fill',  '#ffab00');
+   this.addLinePlot(d, i);
 }); // End data nest loop
 
 updateInterval = setInterval(() => {
@@ -114,7 +87,7 @@ updateInterval = setInterval(() => {
 
     update() {
 
-      this.newRandom(this.data, 1);
+      this.generateRandomNumber(this.data, 1);
       // Nest the entries by name
       this.dataNest = d3.nest()
       .key( (d) => {
@@ -138,35 +111,8 @@ updateInterval = setInterval(() => {
 
       this.dataNest.forEach( (d, i) => {
     if ( d3.select('#line-' + i).empty()) {
-            // add new charts
             // Add line plot
-          this.line.append('g')
-              .attr('id', 'line-' + i)
-              .attr('clip-path', 'url(#clip)')
-                .append('path')
-                .datum(d.values)
-                .attr('class', 'pointlines')
-                .attr('d', this.plotLine)
-                .style('fill', 'none')
-                .style('stroke',  '#ffab00');
-
-          this.dot.append('g')
-            .attr('id', 'scatter-' + i)
-            .attr('clip-path', 'url(#clip)')
-            .selectAll('.dot')
-            .data(d.values)
-              .enter().append('circle')
-              .attr('class', 'dot')
-              .attr('r', 5)
-              .attr('cx', (d) => {
-                return this.xScale(d.x);
-              })
-              .attr('cy', (d) => {
-                return this.yScale(d.y);
-              })
-              .attr('stroke', 'white')
-              .attr('stroke-width', '2px')
-              .style('fill',  '#ffab00');
+            this.addLinePlot(d, i);
       } else {
           this.line.select('#line-' + i).select('path').data([d.values])
             .transition().duration(750)
@@ -212,19 +158,49 @@ updateInterval = setInterval(() => {
 
     }
 
-      newRandom(data, samples) {
-        for (let i = 0; i < samples; i++) {
-          data.push({
-            x: this.g,
-            y: Math.sin(Math.random()),
-            name: 'group-1'
-          });
-          this.g++;
-        }
-        data.sort((a, b) => {
-          return a.x - b.x;
+    generateRandomNumber(data, samples) {
+      for (let i = 0; i < samples; i++) {
+        data.push({
+          x: this.g,
+          y: Math.sin(Math.random()),
+          name: 'group-1'
         });
-        return data;
+        this.g++;
       }
+      data.sort((a, b) => {
+        return a.x - b.x;
+      });
+      return data;
+    }
+
+    addLinePlot(d, i) {
+      this.line.append('g')
+      .attr('id', 'line-' + i)
+      .attr('clip-path', 'url(#clip)')
+      .append('path')
+      .datum(d.values)
+      .attr('class', 'pointlines')
+      .attr('d', this.plotLine)
+      .style('fill', 'none')
+      .style('stroke',  '#ffab00');
+
+      this.dot.append('g')
+      .attr('id', 'scatter-' + i)
+      .attr('clip-path', 'url(#clip)')
+      .selectAll('.dot')
+      .data(d.values)
+      .enter().append('circle')
+      .attr('class', 'dot')
+      .attr('r', 5)
+      .attr('cx', (d) => {
+        return this.xScale(d.x);
+      })
+      .attr('cy', (d) => {
+        return this.yScale(d.y);
+      })
+      .attr('stroke', 'white')
+      .attr('stroke-width', '2px')
+      .style('fill',  '#ffab00');
+    }
 }
 
