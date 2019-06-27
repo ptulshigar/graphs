@@ -78,9 +78,9 @@ export class AppComponent {
     this.addLinePlot(d, i);
   }); // End data nest loop
 
-  // updateInterval = setInterval(() => {
-  //         this.update();
-  //       }, 1000);
+  updateInterval = setInterval(() => {
+          this.update();
+        }, 1000);
 
   /****************** Update Below **************************/
 
